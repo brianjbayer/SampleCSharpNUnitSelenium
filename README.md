@@ -31,6 +31,7 @@ This framework contains support for...
 * Using Selenium Standalone containers eliminating the need
   for locally installed browsers or drivers
 * Multiple local browsers with automatic driver management
+* Fully parallel test execution
 * Headless execution for those browsers that support it
 * Single-command docker compose framework to run
   the tests or a supplied command
@@ -41,6 +42,7 @@ This framework contains support for...
   tests
 * Basic secrets management using environment variables and
   [GitHub Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+* VS Code devcontainer development environment
 
 ## Prerequisites
 
