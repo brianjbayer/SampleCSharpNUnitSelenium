@@ -1,6 +1,6 @@
 services:
   browsertests:
-    image: brianjbayer/SampleCSharpNUnitSelenium:${BROWSERTESTS_TAG:-latest}
+    image: brianjbayer/samplecsharpnunitselenium:${BROWSERTESTS_TAG:-latest}
     container_name: ${BROWSERTESTS_HOSTNAME:-browsertests}
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-unused}

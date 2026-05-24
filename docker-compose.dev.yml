@@ -1,5 +1,5 @@
 services:
   browsertests:
-    image: ${BROWSERTESTS_IMAGE:-brianjbayer/SampleCSharpNUnitSelenium-dev:latest}
+    image: ${BROWSERTESTS_IMAGE:-brianjbayer/samplecsharpnunitselenium-dev:latest}
     volumes:
       - ${BROWSERTESTS_SRC:-.}:/app
