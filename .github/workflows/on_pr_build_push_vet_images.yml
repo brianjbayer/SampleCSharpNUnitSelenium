@@ -13,7 +13,7 @@ jobs:
     name: PR (Branch) Image Names
     uses: brianjbayer/actions-image-cicd/.github/workflows/image_names.yml@v0.2
     with:
-      image_base_name: brianjbayer/SampleCSharpNUnitSelenium
+      image_base_name: brianjbayer/samplecsharpnunitselenium
       add_branch_name: true
 
   # --- Build and Push Images ---
