@@ -1,0 +1,9 @@
+services:
+  browsertests:
+    image: brianjbayer/SampleCSharpNUnitSelenium:${BROWSERTESTS_TAG:-latest}
+    container_name: ${BROWSERTESTS_HOSTNAME:-browsertests}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-unused}
+      - LOGIN_USERNAME
+      - LOGIN_PASSWORD
+      - BROWSER_TYPE

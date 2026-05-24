@@ -1,0 +1,142 @@
+#!/bin/sh
+
+# --- Project Commands ---
+dotnet='dotnet'
+lint="${dotnet} format --verify-no-changes"
+secscan="${dotnet} list package --vulnerable --include-transitive"
+
+# Tests Commands
+tests_logging="--logger \"console;verbosity=${NUNIT_VERBOSITY:-normal}\""
+tests_base="${dotnet} test ${tests_logging}"
+
+sequential_tests="${tests_base} -- NUnit.NumberOfTestWorkers=0"
+
+parallel_workers="NUnit.NumberOfTestWorkers=${NUNIT_WORKERS:-4}"
+parallel_fixtures="NUnit.MaxParallelFixtures=${NUNIT_MAX_FIXTURES:-4}"
+parallel_tests="${tests_base} -- ${parallel_workers} ${parallel_fixtures}"
+
+usage() {
+  cat << USAGE
+Usage: $0 [-hp] [COMMAND] [ARG...]
+
+This is the project "run" script, executing common application tasks.
+
+COMMANDS:
+  lint     Run the code formatter verification [${lint}]
+  secscan  Run a vulnerability scan [${secscan}]
+  tests    Run the tests [${sequential_tests}]
+           (in parallel if -p specified) [${parallel_tests}]
+
+  dotnet    [ARG...]  Run any other dotnet command with arguments (e.g. 'dotnet build')
+
+  [COMMAND] [ARG...]  Run any other command with arguments
+
+OPTIONS:
+  -h  Show this help message
+  -p  Run tests in parallel (fixture-level parallelization with 2 workers)
+USAGE
+}
+
+err_exit() {
+  err_code=$1
+  err_msg="$2"
+  echo "${err_msg} (${err_code})" 1>&2
+  exit $err_code
+}
+
+exit_return_code() {
+  rc=$1
+  echo "EXITING WITH RUN RETURN CODE [${rc}]"
+  exit $rc
+}
+
+run_and_exit_return_code() {
+  set -e
+  command_to_run="$@"
+  if [ -z "$command_to_run" ]; then
+    err_exit 1 "Missing command"
+  fi
+
+  echo "RUNNING [${command_to_run}]..."
+  set +e
+  $command_to_run
+  run_return_code=$?
+  # Must catch return code immediately after command
+  set -e
+  exit_return_code ${run_return_code}
+}
+
+run_dotnet_list_package_scan_output_for_vuln() {
+  dotnet_restore="${dotnet} restore"
+  echo "RUNNING [${dotnet_restore} ]"
+  $dotnet_restore
+
+  echo "RUNNING [${secscan} ] WITH OUTPUT FOR LOGGING"
+  set +e ; $secscan ; set -e
+
+  echo "RUNNING [${secscan} ] AND SCANNING OUTPUT WHICH WILL NOT BE SEEN..."
+  $secscan | grep -q 'has no vulnerable packages given the current sources' && passed=true
+
+  [ -n "$passed" ] && run_return_code=0 || run_return_code=1
+  exit_return_code ${run_return_code}
+}
+
+# --- MAIN ---
+set -e
+
+while getopts ":hp" opt; do
+  case "${opt}" in
+    h)
+      usage;
+      exit
+      ;;
+    p)
+      parallel=1
+      ;;
+    \?)
+      usage
+      err_exit 1 "Invalid Option: -$OPTARG"
+      ;;
+  esac
+done
+shift $((OPTIND-1))
+
+action="${1}"
+recognized=
+
+case "$action" in
+  "lint")
+    recognized=1
+    shift
+    run_and_exit_return_code "${lint} $@"
+    ;;
+
+  "secscan")
+    recognized=1
+    shift
+    # The $secscan command returns zero on scan fail :-(
+    run_dotnet_list_package_scan_output_for_vuln
+    ;;
+
+  "tests")
+    recognized=1
+    shift
+    tests_command="${sequential_tests}"
+    [ -n "$parallel" ] && tests_command="${parallel_tests}"
+    run_and_exit_return_code "${tests_command} $@"
+    ;;
+
+    "dotnet")
+    recognized=1
+    shift
+    run_and_exit_return_code "${dotnet} $@"
+    ;;
+esac
+
+# If no recognized action, run the provided command
+if [ -z "$recognized" ]; then
+  run_and_exit_return_code "$@"
+else
+  # Shouldn’t get here
+  err_exit 99 "Internal logic error"
+fi
